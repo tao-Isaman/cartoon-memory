@@ -8,10 +8,10 @@ import { processImage } from '@/lib/upload';
 import { CARTOON_CREDIT_COST, MAX_FILE_SIZE } from '@/lib/constants';
 import { TEMPLATES, DEFAULT_TEMPLATE, Template } from '@/lib/templates';
 import HeartLoader from './HeartLoader';
-import { Upload, ImagePlus, Download, RotateCcw, Sparkles, AlertCircle, Check } from 'lucide-react';
+import { Upload, ImagePlus, Download, RotateCcw, AlertCircle, Check, Camera } from 'lucide-react';
 import { CartoonGeneration } from '@/types/cartoon';
 
-type CreatorState = 'upload' | 'preview' | 'generating' | 'result';
+type CreatorState = 'select' | 'upload' | 'preview' | 'generating' | 'result';
 
 interface CartoonCreatorProps {
   onGenerated?: () => void;
@@ -23,14 +23,18 @@ export default function CartoonCreator({ onGenerated }: CartoonCreatorProps) {
   const { showToast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [state, setState] = useState<CreatorState>('upload');
+  const [state, setState] = useState<CreatorState>('select');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [result, setResult] = useState<CartoonGeneration | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<Template>(DEFAULT_TEMPLATE);
 
+  const handleTemplateSelect = (t: Template) => {
+    setSelectedTemplate(t);
+    setState('upload');
+  };
+
   const handleFileSelect = useCallback((file: File) => {
-    // Validate
     if (file.size > MAX_FILE_SIZE) {
       showToast('ไฟล์ต้องมีขนาดไม่เกิน 10MB', 'error');
       return;
@@ -103,7 +107,7 @@ export default function CartoonCreator({ onGenerated }: CartoonCreatorProps) {
   };
 
   const handleReset = () => {
-    setState('upload');
+    setState('select');
     setSelectedFile(null);
     setPreviewUrl(null);
     setResult(null);
@@ -128,80 +132,113 @@ export default function CartoonCreator({ onGenerated }: CartoonCreatorProps) {
   };
 
   return (
-    <div className="rounded-2xl border border-card-border bg-card p-5">
-      <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
-        <Sparkles className="text-primary" size={20} />
-        สร้างรูปการ์ตูน
-        <span className="ml-auto text-xs font-normal text-foreground/40">
-          ใช้ {CARTOON_CREDIT_COST} เครดิต/รูป
-        </span>
-      </h2>
-
-      {/* Template Selector — visible during upload and preview */}
-      {(state === 'upload' || state === 'preview') && (
-        <div className="mb-4">
-          <p className="mb-2 text-sm font-medium text-foreground/60">เลือกสไตล์</p>
-          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch' }}>
+    <div>
+      {/* Template Feed — Instagram-style grid */}
+      {state === 'select' && (
+        <div>
+          <p className="mb-3 text-sm text-foreground/50">
+            เลือกสไตล์ที่ชอบ
+            <span className="ml-2 text-xs text-foreground/30">
+              ({CARTOON_CREDIT_COST} เครดิต/รูป)
+            </span>
+          </p>
+          <div className="grid grid-cols-3 gap-0.5 overflow-hidden rounded-xl">
             {TEMPLATES.map((t) => (
               <button
                 key={t.id}
-                onClick={() => setSelectedTemplate(t)}
-                className={`relative flex-shrink-0 rounded-xl transition-all ${
-                  selectedTemplate.id === t.id
-                    ? 'ring-2 ring-primary ring-offset-2'
-                    : 'ring-1 ring-card-border hover:ring-primary/40'
-                }`}
+                onClick={() => handleTemplateSelect(t)}
+                className="group relative aspect-square overflow-hidden bg-card focus:outline-none"
               >
                 <img
                   src={t.path}
                   alt={t.name}
-                  className="h-20 w-20 rounded-xl object-cover"
+                  className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105 group-active:scale-95"
                 />
-                {selectedTemplate.id === t.id && (
-                  <div className="absolute -right-1 -top-1 rounded-full bg-primary p-0.5">
-                    <Check size={12} className="text-white" />
-                  </div>
-                )}
-                <p className="mt-1 text-center text-[10px] text-foreground/50">{t.name}</p>
+                {/* Gradient overlay with name */}
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-2 pb-2 pt-6">
+                  <p className="text-xs font-medium text-white drop-shadow-sm">{t.name}</p>
+                </div>
+                {/* Hover overlay */}
+                <div className="absolute inset-0 flex items-center justify-center bg-primary/0 transition-colors group-hover:bg-primary/10">
+                  <Camera
+                    size={28}
+                    className="text-white opacity-0 drop-shadow-lg transition-opacity group-hover:opacity-80"
+                  />
+                </div>
               </button>
             ))}
           </div>
         </div>
       )}
 
-      {/* Upload State */}
+      {/* Upload State — with selected template header */}
       {state === 'upload' && (
-        <div
-          onDrop={handleDrop}
-          onDragOver={(e) => e.preventDefault()}
-          onClick={() => fileInputRef.current?.click()}
-          className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-card-border py-12 transition-colors hover:border-primary/50 hover:bg-primary/5"
-        >
-          <div className="rounded-full bg-primary/10 p-3">
-            <Upload size={28} className="text-primary" />
+        <div className="space-y-4">
+          {/* Selected template bar */}
+          <div className="flex items-center gap-3 rounded-xl border border-card-border bg-card p-3">
+            <img
+              src={selectedTemplate.path}
+              alt={selectedTemplate.name}
+              className="h-12 w-12 rounded-lg object-cover"
+            />
+            <div className="flex-1">
+              <p className="text-sm font-medium">{selectedTemplate.name}</p>
+              <p className="text-xs text-foreground/40">สไตล์ที่เลือก</p>
+            </div>
+            <button
+              onClick={() => setState('select')}
+              className="rounded-lg px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/5"
+            >
+              เปลี่ยน
+            </button>
           </div>
-          <div className="text-center">
-            <p className="text-sm font-medium">อัพโหลดรูปภาพ</p>
-            <p className="mt-1 text-xs text-foreground/40">
-              ลากไฟล์มาวาง หรือคลิกเพื่อเลือก (JPG, PNG, WebP ไม่เกิน 10MB)
-            </p>
+
+          <div
+            onDrop={handleDrop}
+            onDragOver={(e) => e.preventDefault()}
+            onClick={() => fileInputRef.current?.click()}
+            className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-card-border py-12 transition-colors hover:border-primary/50 hover:bg-primary/5"
+          >
+            <div className="rounded-full bg-primary/10 p-3">
+              <Upload size={28} className="text-primary" />
+            </div>
+            <div className="text-center">
+              <p className="text-sm font-medium">อัพโหลดรูปภาพ</p>
+              <p className="mt-1 text-xs text-foreground/40">
+                ลากไฟล์มาวาง หรือคลิกเพื่อเลือก (JPG, PNG, WebP ไม่เกิน 10MB)
+              </p>
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleFileSelect(file);
+              }}
+              className="hidden"
+            />
           </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) handleFileSelect(file);
-            }}
-            className="hidden"
-          />
         </div>
       )}
 
       {/* Preview State */}
       {state === 'preview' && previewUrl && (
         <div className="space-y-4">
+          {/* Selected template bar */}
+          <div className="flex items-center gap-3 rounded-xl border border-card-border bg-card p-3">
+            <img
+              src={selectedTemplate.path}
+              alt={selectedTemplate.name}
+              className="h-12 w-12 rounded-lg object-cover"
+            />
+            <div className="flex-1">
+              <p className="text-sm font-medium">{selectedTemplate.name}</p>
+              <p className="text-xs text-foreground/40">สไตล์ที่เลือก</p>
+            </div>
+            <Check size={16} className="text-primary" />
+          </div>
+
           <div className="relative mx-auto max-w-xs overflow-hidden rounded-xl">
             <img
               src={previewUrl}
