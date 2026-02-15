@@ -6,7 +6,7 @@ import { useToast } from '@/contexts/ToastContext';
 import CartoonCreator from '@/components/CartoonCreator';
 import ImageWithLoader from '@/components/ImageWithLoader';
 import { CartoonGeneration } from '@/types/cartoon';
-import { Image as ImageIcon, Trash2, Loader2, Sparkles } from 'lucide-react';
+import { Image as ImageIcon, Trash2, Loader2, Sparkles, X, Download } from 'lucide-react';
 import { getTemplateById } from '@/lib/templates';
 
 type Tab = 'create' | 'gallery';
@@ -20,6 +20,7 @@ export default function DashboardPage() {
   const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [viewingImage, setViewingImage] = useState<CartoonGeneration | null>(null);
 
   const loadGenerations = useCallback(
     async (newOffset: number = 0, append: boolean = false) => {
@@ -76,6 +77,21 @@ export default function DashboardPage() {
     }
   };
 
+  const handleDownload = async (url: string) => {
+    try {
+      const res = await fetch(url);
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = `cartoon-${Date.now()}.png`;
+      a.click();
+      URL.revokeObjectURL(blobUrl);
+    } catch {
+      showToast('ดาวน์โหลดไม่สำเร็จ', 'error');
+    }
+  };
+
   const tabs = [
     { id: 'create' as Tab, label: 'สร้างการ์ตูน', icon: Sparkles },
     { id: 'gallery' as Tab, label: 'ผลงาน', icon: ImageIcon, count: total },
@@ -117,7 +133,7 @@ export default function DashboardPage() {
         <CartoonCreator onGenerated={handleGenerated} />
       )}
 
-      {/* Gallery Tab */}
+      {/* Gallery Tab — Instagram profile grid */}
       {activeTab === 'gallery' && (
         <section>
           {loading && generations.length === 0 ? (
@@ -139,46 +155,28 @@ export default function DashboardPage() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-3 gap-0.5 overflow-hidden rounded-xl">
                 {generations.map((gen) => (
-                  <div
+                  <button
                     key={gen.id}
-                    className="group relative overflow-hidden rounded-xl border border-card-border bg-card"
+                    onClick={() => gen.cartoonImageUrl && setViewingImage(gen)}
+                    className="group relative aspect-square overflow-hidden bg-card focus:outline-none"
                   >
                     {gen.cartoonImageUrl && (
                       <ImageWithLoader
                         src={gen.cartoonImageUrl}
                         alt="Cartoon"
-                        className="aspect-square rounded-t-xl"
+                        className="h-full w-full"
                       />
                     )}
-                    <div className="flex items-center justify-between px-2 py-1.5 sm:px-3 sm:py-2">
-                      <div className="flex items-center gap-1.5 overflow-hidden">
-                        <span className="shrink-0 text-[10px] text-foreground/40 sm:text-xs">
-                          {new Date(gen.createdAt).toLocaleDateString('th-TH', {
-                            day: 'numeric',
-                            month: 'short',
-                          })}
-                        </span>
-                        {gen.templateName && (
-                          <span className="truncate rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] text-primary sm:px-2 sm:text-[10px]">
-                            {getTemplateById(gen.templateName)?.name ?? gen.templateName}
-                          </span>
-                        )}
-                      </div>
-                      <button
-                        onClick={() => handleDelete(gen.id)}
-                        disabled={deleting === gen.id}
-                        className="shrink-0 rounded-lg p-1 text-foreground/30 transition-all hover:bg-error/10 hover:text-error sm:p-1.5 sm:opacity-0 sm:group-hover:opacity-100"
-                      >
-                        {deleting === gen.id ? (
-                          <Loader2 className="animate-spin" size={14} />
-                        ) : (
-                          <Trash2 size={14} />
-                        )}
-                      </button>
+                    {/* Hover overlay on desktop */}
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover:bg-black/20">
+                      <ImageIcon
+                        size={24}
+                        className="text-white opacity-0 drop-shadow-lg transition-opacity group-hover:opacity-80"
+                      />
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
 
@@ -194,6 +192,72 @@ export default function DashboardPage() {
             </>
           )}
         </section>
+      )}
+
+      {/* Lightbox Modal */}
+      {viewingImage && viewingImage.cartoonImageUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 animate-fade-in"
+          onClick={() => setViewingImage(null)}
+        >
+          <div
+            className="relative w-full max-w-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close button */}
+            <button
+              onClick={() => setViewingImage(null)}
+              className="absolute -top-10 right-0 rounded-full p-1.5 text-white/70 transition-colors hover:text-white"
+            >
+              <X size={24} />
+            </button>
+
+            {/* Image */}
+            <img
+              src={viewingImage.cartoonImageUrl}
+              alt="Cartoon"
+              className="w-full rounded-xl"
+            />
+
+            {/* Info bar */}
+            <div className="mt-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-white/50">
+                  {new Date(viewingImage.createdAt).toLocaleDateString('th-TH', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
+                  })}
+                </span>
+                {viewingImage.templateName && (
+                  <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-white/70">
+                    {getTemplateById(viewingImage.templateName)?.name ?? viewingImage.templateName}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleDownload(viewingImage.cartoonImageUrl!)}
+                  className="flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-white/20"
+                >
+                  <Download size={14} />
+                  บันทึก
+                </button>
+                <button
+                  onClick={() => {
+                    handleDelete(viewingImage.id);
+                    setViewingImage(null);
+                  }}
+                  disabled={deleting === viewingImage.id}
+                  className="flex items-center gap-1.5 rounded-lg bg-error/20 px-3 py-1.5 text-xs font-medium text-error transition-colors hover:bg-error/30"
+                >
+                  <Trash2 size={14} />
+                  ลบ
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

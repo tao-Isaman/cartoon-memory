@@ -133,41 +133,47 @@ export default function CartoonCreator({ onGenerated }: CartoonCreatorProps) {
 
   return (
     <div>
-      {/* Template Feed — Instagram-style grid */}
+      {/* Template Feed — Instagram feed style (single column scroll) */}
       {state === 'select' && (
-        <div>
-          <p className="mb-3 text-sm text-foreground/50">
+        <div className="space-y-4">
+          <p className="text-sm text-foreground/50">
             เลือกสไตล์ที่ชอบ
             <span className="ml-2 text-xs text-foreground/30">
               ({CARTOON_CREDIT_COST} เครดิต/รูป)
             </span>
           </p>
-          <div className="grid grid-cols-3 gap-0.5 overflow-hidden rounded-xl">
-            {TEMPLATES.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => handleTemplateSelect(t)}
-                className="group relative aspect-square overflow-hidden bg-card focus:outline-none"
-              >
+          {TEMPLATES.map((t) => (
+            <div
+              key={t.id}
+              className="overflow-hidden rounded-xl border border-card-border bg-card"
+            >
+              {/* Post header */}
+              <div className="flex items-center gap-3 px-4 py-3">
                 <img
                   src={t.path}
                   alt={t.name}
-                  className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105 group-active:scale-95"
+                  className="h-8 w-8 rounded-full object-cover ring-2 ring-primary/20"
                 />
-                {/* Gradient overlay with name */}
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-2 pb-2 pt-6">
-                  <p className="text-xs font-medium text-white drop-shadow-sm">{t.name}</p>
-                </div>
-                {/* Hover overlay */}
-                <div className="absolute inset-0 flex items-center justify-center bg-primary/0 transition-colors group-hover:bg-primary/10">
-                  <Camera
-                    size={28}
-                    className="text-white opacity-0 drop-shadow-lg transition-opacity group-hover:opacity-80"
-                  />
-                </div>
-              </button>
-            ))}
-          </div>
+                <span className="text-sm font-semibold">{t.name}</span>
+              </div>
+              {/* Post image */}
+              <img
+                src={t.path}
+                alt={t.name}
+                className="aspect-square w-full object-cover"
+              />
+              {/* Post action */}
+              <div className="px-4 py-3">
+                <button
+                  onClick={() => handleTemplateSelect(t)}
+                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-sm font-semibold text-white transition-all hover:bg-primary-dark active:scale-[0.98]"
+                >
+                  <Camera size={16} />
+                  ใช้สไตล์นี้
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
