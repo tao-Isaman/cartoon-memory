@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "src/app/api/cartoon/generate/route.ts": {
+      "maxDuration": 60
+    }
+  }
+}
