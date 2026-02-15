@@ -3,6 +3,7 @@ import { getSupabaseRouteClient, getSupabaseServiceClient } from '@/lib/supabase
 import { deductCreditsForCartoon, refundCreditsForCartoon, saveCartoonGeneration } from '@/lib/cartoon';
 import { getUserCreditBalance } from '@/lib/credits';
 import { generateCartoonImage } from '@/lib/openai';
+import { getTemplateById, DEFAULT_TEMPLATE } from '@/lib/templates';
 
 export const maxDuration = 60;
 
@@ -19,10 +20,14 @@ export async function POST(request: Request) {
   // Parse form data
   const formData = await request.formData();
   const file = formData.get('file') as File | null;
+  const templateId = formData.get('templateId') as string | null;
 
   if (!file) {
     return NextResponse.json({ error: 'No file provided' }, { status: 400 });
   }
+
+  // Resolve template
+  const template = (templateId && getTemplateById(templateId)) || DEFAULT_TEMPLATE;
 
   // Validate file
   const maxSize = 10 * 1024 * 1024; // 10MB
@@ -51,7 +56,7 @@ export async function POST(request: Request) {
     const userImageBuffer = Buffer.from(arrayBuffer);
 
     // Generate cartoon
-    const b64Result = await generateCartoonImage(userImageBuffer);
+    const b64Result = await generateCartoonImage(userImageBuffer, template.filename);
 
     // Upload original
     const timestamp = Date.now();
@@ -88,6 +93,7 @@ export async function POST(request: Request) {
       originalImageUrl: originalUrlData.publicUrl,
       cartoonImageUrl: resultUrlData.publicUrl,
       prompt: 'Cartoon style transfer',
+      templateName: template.id,
       status: 'completed',
     });
 

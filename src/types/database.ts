@@ -164,6 +164,7 @@ export interface Database {
           cartoon_image_url: string | null;
           credits_used: number;
           prompt: string | null;
+          template_name: string | null;
           status: string;
           created_at: string;
         };
@@ -174,6 +175,7 @@ export interface Database {
           cartoon_image_url?: string | null;
           credits_used?: number;
           prompt?: string | null;
+          template_name?: string | null;
           status: string;
           created_at?: string;
         };
@@ -184,6 +186,7 @@ export interface Database {
           cartoon_image_url?: string | null;
           credits_used?: number;
           prompt?: string | null;
+          template_name?: string | null;
           status?: string;
           created_at?: string;
         };

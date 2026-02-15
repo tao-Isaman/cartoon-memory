@@ -6,8 +6,9 @@ import { useCreditBalance } from '@/contexts/CreditBalanceContext';
 import { useToast } from '@/contexts/ToastContext';
 import { processImage } from '@/lib/upload';
 import { CARTOON_CREDIT_COST, MAX_FILE_SIZE } from '@/lib/constants';
+import { TEMPLATES, DEFAULT_TEMPLATE, Template } from '@/lib/templates';
 import HeartLoader from './HeartLoader';
-import { Upload, ImagePlus, Download, RotateCcw, Sparkles, AlertCircle } from 'lucide-react';
+import { Upload, ImagePlus, Download, RotateCcw, Sparkles, AlertCircle, Check } from 'lucide-react';
 import { CartoonGeneration } from '@/types/cartoon';
 
 type CreatorState = 'upload' | 'preview' | 'generating' | 'result';
@@ -26,6 +27,7 @@ export default function CartoonCreator({ onGenerated }: CartoonCreatorProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [result, setResult] = useState<CartoonGeneration | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<Template>(DEFAULT_TEMPLATE);
 
   const handleFileSelect = useCallback((file: File) => {
     // Validate
@@ -67,6 +69,7 @@ export default function CartoonCreator({ onGenerated }: CartoonCreatorProps) {
       const processed = await processImage(selectedFile);
       const formData = new FormData();
       formData.append('file', processed, 'photo.webp');
+      formData.append('templateId', selectedTemplate.id);
 
       const res = await fetch('/api/cartoon/generate', {
         method: 'POST',
@@ -104,6 +107,7 @@ export default function CartoonCreator({ onGenerated }: CartoonCreatorProps) {
     setSelectedFile(null);
     setPreviewUrl(null);
     setResult(null);
+    setSelectedTemplate(DEFAULT_TEMPLATE);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -132,6 +136,38 @@ export default function CartoonCreator({ onGenerated }: CartoonCreatorProps) {
           ใช้ {CARTOON_CREDIT_COST} เครดิต/รูป
         </span>
       </h2>
+
+      {/* Template Selector — visible during upload and preview */}
+      {(state === 'upload' || state === 'preview') && (
+        <div className="mb-4">
+          <p className="mb-2 text-sm font-medium text-foreground/60">เลือกสไตล์</p>
+          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch' }}>
+            {TEMPLATES.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setSelectedTemplate(t)}
+                className={`relative flex-shrink-0 rounded-xl transition-all ${
+                  selectedTemplate.id === t.id
+                    ? 'ring-2 ring-primary ring-offset-2'
+                    : 'ring-1 ring-card-border hover:ring-primary/40'
+                }`}
+              >
+                <img
+                  src={t.path}
+                  alt={t.name}
+                  className="h-20 w-20 rounded-xl object-cover"
+                />
+                {selectedTemplate.id === t.id && (
+                  <div className="absolute -right-1 -top-1 rounded-full bg-primary p-0.5">
+                    <Check size={12} className="text-white" />
+                  </div>
+                )}
+                <p className="mt-1 text-center text-[10px] text-foreground/50">{t.name}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Upload State */}
       {state === 'upload' && (
