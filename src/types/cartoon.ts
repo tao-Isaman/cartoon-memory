@@ -5,6 +5,7 @@ export interface CartoonGeneration {
   cartoonImageUrl: string | null;
   creditsUsed: number;
   prompt: string | null;
+  templateName: string | null;
   status: 'pending' | 'completed' | 'failed';
   createdAt: string;
 }

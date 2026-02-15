@@ -14,6 +14,7 @@ function mapGenRow(row: GenRow): CartoonGeneration {
     cartoonImageUrl: row.cartoon_image_url,
     creditsUsed: row.credits_used,
     prompt: row.prompt,
+    templateName: row.template_name,
     status: row.status as CartoonGeneration['status'],
     createdAt: row.created_at,
   };
@@ -103,6 +104,7 @@ export async function saveCartoonGeneration(
     cartoonImageUrl?: string | null;
     creditsUsed?: number;
     prompt?: string | null;
+    templateName?: string | null;
     status: 'pending' | 'completed' | 'failed';
   }
 ): Promise<CartoonGeneration | null> {
@@ -114,6 +116,7 @@ export async function saveCartoonGeneration(
       cartoon_image_url: data.cartoonImageUrl ?? null,
       credits_used: data.creditsUsed ?? CARTOON_CREDIT_COST,
       prompt: data.prompt ?? null,
+      template_name: data.templateName ?? null,
       status: data.status,
     })
     .select()

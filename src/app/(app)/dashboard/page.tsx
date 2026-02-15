@@ -7,6 +7,7 @@ import CartoonCreator from '@/components/CartoonCreator';
 import ImageWithLoader from '@/components/ImageWithLoader';
 import { CartoonGeneration } from '@/types/cartoon';
 import { Image as ImageIcon, Trash2, Loader2 } from 'lucide-react';
+import { getTemplateById } from '@/lib/templates';
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -111,12 +112,19 @@ export default function DashboardPage() {
                     />
                   )}
                   <div className="flex items-center justify-between px-3 py-2">
-                    <span className="text-xs text-foreground/40">
-                      {new Date(gen.createdAt).toLocaleDateString('th-TH', {
-                        day: 'numeric',
-                        month: 'short',
-                      })}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-foreground/40">
+                        {new Date(gen.createdAt).toLocaleDateString('th-TH', {
+                          day: 'numeric',
+                          month: 'short',
+                        })}
+                      </span>
+                      {gen.templateName && (
+                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] text-primary">
+                          {getTemplateById(gen.templateName)?.name ?? gen.templateName}
+                        </span>
+                      )}
+                    </div>
                     <button
                       onClick={() => handleDelete(gen.id)}
                       disabled={deleting === gen.id}
