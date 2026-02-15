@@ -17,16 +17,34 @@ export async function generateCartoonImage(
   const templatePath = path.join(process.cwd(), 'public', 'template', templateFilename);
   const templateBuffer = fs.readFileSync(templatePath);
 
+  const ext = path.extname(templateFilename).toLowerCase();
+  const templateMime = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
+
   const response = await getOpenAI().images.edit({
     model: 'gpt-image-1.5',
     image: [
-      await toFile(templateBuffer, 'template.png'),
-      await toFile(userImageBuffer, 'user.png'),
+      await toFile(templateBuffer, templateFilename, { type: templateMime }),
+      await toFile(userImageBuffer, 'user.webp', { type: 'image/webp' }),
     ],
     prompt: 'Use style of first image apply to second image. Change the background to pastel color from template image',
     size: '1024x1024',
     quality: 'medium',
   });
 
-  return response.data![0].b64_json!;
+  const imageData = response.data?.[0];
+  if (!imageData) {
+    throw new Error('No image data returned from OpenAI');
+  }
+
+  // If b64_json is available, use it; otherwise fetch from URL
+  if (imageData.b64_json) {
+    return imageData.b64_json;
+  }
+  if (imageData.url) {
+    const res = await fetch(imageData.url);
+    const buffer = Buffer.from(await res.arrayBuffer());
+    return buffer.toString('base64');
+  }
+
+  throw new Error('No image content in OpenAI response');
 }
