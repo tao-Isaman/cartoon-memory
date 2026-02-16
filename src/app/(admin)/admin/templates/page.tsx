@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useToast } from '@/contexts/ToastContext';
-import { Plus, ChevronUp, ChevronDown, Trash2, Loader2, Palette, Eye, EyeOff } from 'lucide-react';
+import { Plus, ChevronUp, ChevronDown, Trash2, Loader2, Palette, Eye, EyeOff, Pencil } from 'lucide-react';
 
 interface AdminTemplate {
   id: string;
@@ -153,6 +153,15 @@ export default function AdminTemplatesPage() {
               >
                 <ChevronDown size={18} />
               </button>
+
+              {/* Edit */}
+              <Link
+                href={`/admin/templates/${template.id}/edit`}
+                className="rounded-lg p-1.5 text-foreground/40 transition-colors hover:bg-accent/10 hover:text-accent"
+                title="แก้ไข"
+              >
+                <Pencil size={18} />
+              </Link>
 
               {/* Toggle active */}
               <button
