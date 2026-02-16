@@ -64,7 +64,7 @@ export const metadata: Metadata = {
       'สร้างรูปการ์ตูนจากรูปถ่ายด้วย AI ฟรี วาดรูปการ์ตูนออนไลน์ เปลี่ยนรูปเป็นการ์ตูนสุดน่ารัก หลายสไตล์ให้เลือก ไม่มีลายน้ำ',
     images: [
       {
-        url: '/og-image.png',
+        url: '/opengraph-image',
         width: 1200,
         height: 630,
         alt: 'Cartoon Gen - สร้างรูปการ์ตูน AI',
@@ -76,7 +76,7 @@ export const metadata: Metadata = {
     title: 'Cartoon Gen - สร้างรูปการ์ตูน AI | วาดรูปการ์ตูนออนไลน์',
     description:
       'สร้างรูปการ์ตูนจากรูปถ่ายด้วย AI ฟรี วาดรูปการ์ตูนออนไลน์ เปลี่ยนรูปเป็นการ์ตูนสุดน่ารัก',
-    images: ['/og-image.png'],
+    images: ['/twitter-image'],
   },
   robots: {
     index: true,
