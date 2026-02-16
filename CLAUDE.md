@@ -17,8 +17,8 @@ Thai-language cartoon image generator. Users sign in with Google, buy credits vi
 | Styling | Tailwind CSS v4 (CSS-first config in `globals.css` via `@theme inline`) |
 | Auth/DB | Supabase (shared project, PostgreSQL + RLS) |
 | Payments | Stripe (THB, card + PromptPay), API version `2026-01-28` |
-| AI | OpenAI SDK v6 (`gpt-image-1` via `images.edit`) |
-| Storage | Supabase Storage (`cartoon-images` bucket, WebP) |
+| AI | OpenAI SDK v6 (`gpt-image-1.5` via `images.edit`) |
+| Storage | Supabase Storage (`cartoon-images` + `templates` buckets) |
 | Icons | Lucide React |
 | Fonts | Kanit (body/Thai), Itim (handwriting), Leckerli One (branding) |
 | Hosting | Vercel (60s function timeout for `/api/cartoon/generate`) |
@@ -36,8 +36,8 @@ Thai-language cartoon image generator. Users sign in with Google, buy credits vi
 │                                  └───────────────┘  │
 │  ┌──────────────────────┐  ┌──────────────────────┐  │
 │  │ cartoon_generations  │  │ Storage: cartoon-    │  │
-│  │                      │  │ images (originals/   │  │
-│  │                      │  │ results)             │  │
+│  │ templates            │  │ images (originals/   │  │
+│  │                      │  │ results) + templates │  │
 │  └──────────────────────┘  └──────────────────────┘  │
 └──────────────────────────────────────────────────────┘
          ▲                    ▲                ▲
@@ -48,7 +48,7 @@ Thai-language cartoon image generator. Users sign in with Google, buy credits vi
 └─────────────────┘  └───────────────┘  └────────────┘
 ```
 
-Both products share the same Supabase project: same `auth.users`, `user_profiles`, `user_credits`, `credit_transactions`, `credit_packages`. This app owns `cartoon_generations` and `cartoon-images` bucket.
+Both products share the same Supabase project: same `auth.users`, `user_profiles`, `user_credits`, `credit_transactions`, `credit_packages`. This app owns `cartoon_generations`, `templates`, `cartoon-images` bucket, and `templates` bucket.
 
 ## Project Structure
 
@@ -59,23 +59,25 @@ src/
     supabase-server.ts  # getSupabaseRouteClient() + getSupabaseServiceClient()
     supabase.ts         # Browser client singleton
     stripe.ts           # getStripe() (lazy init)
-    openai.ts           # generateCartoonImage() (lazy init)
+    openai.ts           # generateCartoonImage() (lazy init, fetches template via URL)
     credits.ts          # Credit balance, packages, transactions
     profile.ts          # Profile CRUD, completion check, grant credits
     cartoon.ts          # Deduct/refund credits, save generations
+    admin.ts            # isAdminEmail(), getAdminUser()
+    templates.ts        # Template interface only (data lives in DB)
     upload.ts           # Client-side image resize/compress
     constants.ts        # CARTOON_CREDIT_COST=10, PROFILE_COMPLETION_CREDITS=10
   contexts/      # AuthContext, ToastContext, CreditBalanceContext
   hooks/         # useAuth, useToast, useCreditBalance
-  components/    # CartoonCreator, AppBar, HeartLoader, ImageWithLoader, Toast, ClientProviders
+  components/    # CartoonCreator, AppBar, AdminAppBar, HeartLoader, ImageWithLoader, Toast, ClientProviders
   app/
     (app)/       # Auth-guarded routes (dashboard, credits, profile, onboarding)
-    api/         # REST API routes
+    (admin)/     # Admin-guarded routes (admin dashboard, template management)
+    api/         # REST API routes (includes /api/admin/* and /api/templates)
     auth/        # OAuth callback
     login/       # Public login page
     payment/     # Post-checkout pages (success, cancel)
-public/
-  template/example.png  # Cartoon style template image for OpenAI
+migrations/      # SQL migration files for Supabase
 ```
 
 ## Key Patterns
@@ -98,6 +100,25 @@ Browser client singleton in `lib/supabase.ts` via `getSupabaseBrowserClient()`.
 
 OpenAI and Stripe clients use getter functions (not module-level constants) to avoid build-time errors when env vars are missing. See `lib/openai.ts` and `lib/stripe.ts`.
 
+### Admin Auth
+
+Admin access is controlled via `ADMIN_EMAILS` env var (comma-separated Gmail addresses). No DB role column needed.
+
+- `lib/admin.ts` — `isAdminEmail(email)` checks against env, `getAdminUser()` gets current user if admin
+- `/api/admin/me` — Client-side check returns `{ isAdmin: boolean }`
+- `(admin)/layout.tsx` — Client layout calls `/api/admin/me`, redirects non-admins to `/dashboard`
+- All `/api/admin/*` routes call `getAdminUser()` first, return 403 if not admin
+
+### Templates (DB-Managed)
+
+Templates are stored in the `templates` DB table + `templates` Storage bucket. No static config.
+
+- Public API: `GET /api/templates` — returns active templates ordered by `sort_order`
+- Admin API: full CRUD + reorder + image upload at `/api/admin/templates/*`
+- `CartoonCreator` fetches templates from `/api/templates` on mount
+- `openai.ts` fetches template image via HTTP URL (not filesystem)
+- `generate/route.ts` queries DB for template by ID, falls back to first active template
+
 ### Credit System
 
 - 10 credits per cartoon generation, 10 free credits for profile completion
@@ -115,7 +136,9 @@ All user-facing text is in **Thai**. Keep this consistent when adding new UI.
 
 ## Environment Variables
 
-See `.env.example` for required vars: Supabase (3), Stripe (2), OpenAI (1), App URL (1).
+See `.env.example` for required vars: Supabase (3), Stripe (2), OpenAI (1), App URL (1), Admin (1).
+
+- `ADMIN_EMAILS` — Comma-separated admin Gmail addresses (e.g. `admin@gmail.com,admin2@gmail.com`)
 
 Note: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` must be the same values as The Memory project to share auth & data.
 
@@ -265,6 +288,26 @@ ALTER TABLE cartoon_generations ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view own generations" ON cartoon_generations FOR SELECT USING (auth.uid() = user_id);
 ```
 
+### `templates` — Cartoon Style Templates (DB-Managed)
+
+```sql
+CREATE TABLE templates (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  slug TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL,
+  filename TEXT NOT NULL,
+  storage_path TEXT NOT NULL,
+  image_url TEXT NOT NULL,
+  is_active BOOLEAN DEFAULT TRUE,
+  sort_order INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE templates ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Anyone can view active templates" ON templates FOR SELECT USING (is_active = TRUE);
+```
+
 ### Storage Bucket
 
 ```sql
@@ -279,6 +322,17 @@ CREATE POLICY "Users delete own cartoon images" ON storage.objects
 ```
 
 Folder structure: `cartoon-images/originals/{userId}/{timestamp}-{random}.webp` and `cartoon-images/results/{userId}/{timestamp}-{random}.png`
+
+**Templates bucket:**
+
+```sql
+INSERT INTO storage.buckets (id, name, public) VALUES ('templates', 'templates', TRUE);
+
+CREATE POLICY "Public read templates" ON storage.objects
+  FOR SELECT USING (bucket_id = 'templates');
+```
+
+Folder structure: `templates/{slug}.{ext}`
 
 ---
 
@@ -316,6 +370,25 @@ Folder structure: `cartoon-images/originals/{userId}/{timestamp}-{random}.webp` 
 | `/api/payment/verify` | POST | Yes | Verify Stripe session, add credits |
 | `/api/webhook/stripe` | POST | No* | Stripe webhook (*verified via signature) |
 
+### Templates (Public)
+
+| Endpoint | Method | Auth | Description |
+|----------|--------|------|-------------|
+| `/api/templates` | GET | No | List active templates ordered by sort_order |
+
+### Admin
+
+| Endpoint | Method | Auth | Description |
+|----------|--------|------|-------------|
+| `/api/admin/me` | GET | Admin | Check if current user is admin |
+| `/api/admin/stats` | GET | Admin | Dashboard stats (users, generations, credits, template usage) |
+| `/api/admin/templates` | GET | Admin | List all templates (including inactive) |
+| `/api/admin/templates` | POST | Admin | Create new template |
+| `/api/admin/templates/[id]` | PATCH | Admin | Update template fields |
+| `/api/admin/templates/[id]` | DELETE | Admin | Delete template + storage file |
+| `/api/admin/templates/reorder` | PUT | Admin | Bulk update sort_order |
+| `/api/admin/templates/upload` | POST | Admin | Upload template image to Storage |
+
 ### Auth
 
 | Endpoint | Method | Description |
@@ -330,16 +403,18 @@ Folder structure: `cartoon-images/originals/{userId}/{timestamp}-{random}.webp` 
 POST /api/cartoon/generate (multipart/form-data, max 10MB, JPG/PNG/WebP)
 
 1. Authenticate user
-2. Deduct 10 credits (optimistic lock)
+2. Resolve template from DB (by templateId, fallback to first active)
+3. Deduct 10 credits (optimistic lock)
    └── Insufficient balance → 400 { error, balance }
-3. Convert uploaded file to Buffer
-4. Call OpenAI images.edit with template + user image
-5. Upload original → cartoon-images/originals/{userId}/{timestamp}.webp
-6. Upload result → cartoon-images/results/{userId}/{timestamp}.png
-7. Save to cartoon_generations (status: 'completed')
-8. Return { success, generation, newBalance }
+4. Convert uploaded file to Buffer
+5. Fetch template image from Supabase Storage URL
+6. Call OpenAI images.edit with template + user image
+7. Upload original → cartoon-images/originals/{userId}/{timestamp}.webp
+8. Upload result → cartoon-images/results/{userId}/{timestamp}.png
+9. Save to cartoon_generations (status: 'completed', templateName: slug)
+10. Return { success, generation, newBalance }
 
-On failure at steps 3-7:
+On failure at steps 4-9:
    ├── Refund 10 credits
    ├── Save to cartoon_generations (status: 'failed')
    └── Return 500 { error, refunded: true }
@@ -377,9 +452,12 @@ Login → Google OAuth → `/auth/callback` → check `user_profiles` → new us
 ## Deployment Checklist
 
 - [ ] Verify all Supabase tables, triggers, indexes, and RLS policies exist
+- [ ] Run `migrations/002_add_templates_table.sql` for templates table
 - [ ] Verify `cartoon-images` storage bucket with policies
+- [ ] Create `templates` storage bucket (public) with read policy
+- [ ] Upload template images to `templates` bucket, update `image_url` in DB
 - [ ] Seed `credit_packages` with default packages
 - [ ] Set up Stripe webhook → `/api/webhook/stripe` (events: `checkout.session.completed`, `async_payment_succeeded`, `async_payment_failed`)
 - [ ] Add app domain to Supabase Auth → Redirect URLs
-- [ ] Set all environment variables in Vercel
+- [ ] Set all environment variables in Vercel (including `ADMIN_EMAILS`)
 - [ ] Configure custom domain

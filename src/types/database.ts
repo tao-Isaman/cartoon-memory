@@ -192,6 +192,45 @@ export interface Database {
         };
         Relationships: [];
       };
+      templates: {
+        Row: {
+          id: string;
+          slug: string;
+          name: string;
+          filename: string;
+          storage_path: string;
+          image_url: string;
+          is_active: boolean;
+          sort_order: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          slug: string;
+          name: string;
+          filename: string;
+          storage_path: string;
+          image_url: string;
+          is_active?: boolean;
+          sort_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          slug?: string;
+          name?: string;
+          filename?: string;
+          storage_path?: string;
+          image_url?: string;
+          is_active?: boolean;
+          sort_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;

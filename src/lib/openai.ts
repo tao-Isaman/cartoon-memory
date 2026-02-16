@@ -1,6 +1,4 @@
 import OpenAI, { toFile } from 'openai';
-import fs from 'fs';
-import path from 'path';
 
 let _openai: OpenAI | null = null;
 function getOpenAI() {
@@ -12,13 +10,17 @@ function getOpenAI() {
 
 export async function generateCartoonImage(
   userImageBuffer: Buffer,
+  templateImageUrl: string,
   templateFilename: string
 ): Promise<string> {
-  const templatePath = path.join(process.cwd(), 'public', 'template', templateFilename);
-  const templateBuffer = fs.readFileSync(templatePath);
+  const res = await fetch(templateImageUrl);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch template image: ${res.status}`);
+  }
+  const templateBuffer = Buffer.from(await res.arrayBuffer());
 
-  const ext = path.extname(templateFilename).toLowerCase();
-  const templateMime = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
+  const ext = templateFilename.split('.').pop()?.toLowerCase() ?? 'jpg';
+  const templateMime = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
 
   const response = await getOpenAI().images.edit({
     model: 'gpt-image-1.5',

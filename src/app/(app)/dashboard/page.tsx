@@ -7,7 +7,7 @@ import CartoonCreator from '@/components/CartoonCreator';
 import ImageWithLoader from '@/components/ImageWithLoader';
 import { CartoonGeneration } from '@/types/cartoon';
 import { Image as ImageIcon, Trash2, Loader2, Sparkles, X, Download } from 'lucide-react';
-import { getTemplateById } from '@/lib/templates';
+import { Template } from '@/lib/templates';
 
 type Tab = 'create' | 'gallery';
 
@@ -21,6 +21,18 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [viewingImage, setViewingImage] = useState<CartoonGeneration | null>(null);
+  const [templateMap, setTemplateMap] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    fetch('/api/templates')
+      .then(res => res.json())
+      .then(data => {
+        const map: Record<string, string> = {};
+        (data.templates ?? []).forEach((t: Template) => { map[t.slug] = t.name; });
+        setTemplateMap(map);
+      })
+      .catch(() => {});
+  }, []);
 
   const loadGenerations = useCallback(
     async (newOffset: number = 0, append: boolean = false) => {
@@ -231,7 +243,7 @@ export default function DashboardPage() {
                 </span>
                 {viewingImage.templateName && (
                   <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-white/70">
-                    {getTemplateById(viewingImage.templateName)?.name ?? viewingImage.templateName}
+                    {templateMap[viewingImage.templateName] ?? viewingImage.templateName}
                   </span>
                 )}
               </div>

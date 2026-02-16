@@ -1,14 +1,14 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCreditBalance } from '@/contexts/CreditBalanceContext';
 import { useToast } from '@/contexts/ToastContext';
 import { processImage } from '@/lib/upload';
 import { CARTOON_CREDIT_COST, MAX_FILE_SIZE } from '@/lib/constants';
-import { TEMPLATES, DEFAULT_TEMPLATE, Template } from '@/lib/templates';
+import { Template } from '@/lib/templates';
 import HeartLoader from './HeartLoader';
-import { Upload, ImagePlus, Download, RotateCcw, AlertCircle, Check, Camera } from 'lucide-react';
+import { Upload, ImagePlus, Download, RotateCcw, AlertCircle, Check, Camera, Loader2 } from 'lucide-react';
 import { CartoonGeneration } from '@/types/cartoon';
 
 type CreatorState = 'select' | 'upload' | 'preview' | 'generating' | 'result';
@@ -27,7 +27,17 @@ export default function CartoonCreator({ onGenerated }: CartoonCreatorProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [result, setResult] = useState<CartoonGeneration | null>(null);
-  const [selectedTemplate, setSelectedTemplate] = useState<Template>(DEFAULT_TEMPLATE);
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [templatesLoading, setTemplatesLoading] = useState(true);
+  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
+
+  useEffect(() => {
+    fetch('/api/templates')
+      .then(res => res.json())
+      .then(data => setTemplates(data.templates ?? []))
+      .catch(() => {})
+      .finally(() => setTemplatesLoading(false));
+  }, []);
 
   const handleTemplateSelect = (t: Template) => {
     setSelectedTemplate(t);
@@ -60,7 +70,7 @@ export default function CartoonCreator({ onGenerated }: CartoonCreatorProps) {
   );
 
   const handleGenerate = async () => {
-    if (!user || !selectedFile) return;
+    if (!user || !selectedFile || !selectedTemplate) return;
 
     if (balance < CARTOON_CREDIT_COST) {
       showToast(`เครดิตไม่เพียงพอ (ต้องการ ${CARTOON_CREDIT_COST} เครดิต)`, 'error');
@@ -111,7 +121,7 @@ export default function CartoonCreator({ onGenerated }: CartoonCreatorProps) {
     setSelectedFile(null);
     setPreviewUrl(null);
     setResult(null);
-    setSelectedTemplate(DEFAULT_TEMPLATE);
+    setSelectedTemplate(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -142,48 +152,58 @@ export default function CartoonCreator({ onGenerated }: CartoonCreatorProps) {
               ({CARTOON_CREDIT_COST} เครดิต/รูป)
             </span>
           </p>
-          {TEMPLATES.map((t) => (
-            <div
-              key={t.id}
-              className="overflow-hidden rounded-xl border border-card-border bg-card"
-            >
-              {/* Post header */}
-              <div className="flex items-center gap-3 px-4 py-3">
-                <img
-                  src={t.path}
-                  alt={t.name}
-                  className="h-8 w-8 rounded-full object-cover ring-2 ring-primary/20"
-                />
-                <span className="text-sm font-semibold">{t.name}</span>
-              </div>
-              {/* Post image */}
-              <img
-                src={t.path}
-                alt={t.name}
-                className="aspect-square w-full object-cover"
-              />
-              {/* Post action */}
-              <div className="px-4 py-3">
-                <button
-                  onClick={() => handleTemplateSelect(t)}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-sm font-semibold text-white transition-all hover:bg-primary-dark active:scale-[0.98]"
-                >
-                  <Camera size={16} />
-                  ใช้สไตล์นี้
-                </button>
-              </div>
+          {templatesLoading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="animate-spin text-primary" size={32} />
             </div>
-          ))}
+          ) : templates.length === 0 ? (
+            <div className="rounded-xl border border-card-border bg-card p-8 text-center text-sm text-foreground/40">
+              ยังไม่มีสไตล์ให้เลือก
+            </div>
+          ) : (
+            templates.map((t) => (
+              <div
+                key={t.id}
+                className="overflow-hidden rounded-xl border border-card-border bg-card"
+              >
+                {/* Post header */}
+                <div className="flex items-center gap-3 px-4 py-3">
+                  <img
+                    src={t.imageUrl}
+                    alt={t.name}
+                    className="h-8 w-8 rounded-full object-cover ring-2 ring-primary/20"
+                  />
+                  <span className="text-sm font-semibold">{t.name}</span>
+                </div>
+                {/* Post image */}
+                <img
+                  src={t.imageUrl}
+                  alt={t.name}
+                  className="aspect-square w-full object-cover"
+                />
+                {/* Post action */}
+                <div className="px-4 py-3">
+                  <button
+                    onClick={() => handleTemplateSelect(t)}
+                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-sm font-semibold text-white transition-all hover:bg-primary-dark active:scale-[0.98]"
+                  >
+                    <Camera size={16} />
+                    ใช้สไตล์นี้
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       )}
 
       {/* Upload State — with selected template header */}
-      {state === 'upload' && (
+      {state === 'upload' && selectedTemplate && (
         <div className="space-y-4">
           {/* Selected template bar */}
           <div className="flex items-center gap-3 rounded-xl border border-card-border bg-card p-3">
             <img
-              src={selectedTemplate.path}
+              src={selectedTemplate.imageUrl}
               alt={selectedTemplate.name}
               className="h-12 w-12 rounded-lg object-cover"
             />
@@ -229,12 +249,12 @@ export default function CartoonCreator({ onGenerated }: CartoonCreatorProps) {
       )}
 
       {/* Preview State */}
-      {state === 'preview' && previewUrl && (
+      {state === 'preview' && previewUrl && selectedTemplate && (
         <div className="space-y-4">
           {/* Selected template bar */}
           <div className="flex items-center gap-3 rounded-xl border border-card-border bg-card p-3">
             <img
-              src={selectedTemplate.path}
+              src={selectedTemplate.imageUrl}
               alt={selectedTemplate.name}
               className="h-12 w-12 rounded-lg object-cover"
             />
