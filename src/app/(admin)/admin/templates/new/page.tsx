@@ -12,6 +12,7 @@ export default function NewTemplatePage() {
 
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
+  const [prompt, setPrompt] = useState('apply style and background of first image into second image');
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -62,6 +63,7 @@ export default function NewTemplatePage() {
         body: JSON.stringify({
           slug,
           name,
+          prompt,
           filename: uploadData.filename,
           storage_path: uploadData.storagePath,
           image_url: uploadData.imageUrl,
@@ -140,6 +142,19 @@ export default function NewTemplatePage() {
             placeholder="เช่น pink_tone"
             className="w-full rounded-xl border border-card-border bg-white px-4 py-2.5 text-sm outline-none transition-colors focus:border-accent"
           />
+        </div>
+
+        {/* Prompt */}
+        <div>
+          <label className="mb-2 block text-sm font-medium text-foreground/60">Prompt (สำหรับ AI)</label>
+          <textarea
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            rows={3}
+            placeholder="apply style and background of first image into second image"
+            className="w-full rounded-xl border border-card-border bg-white px-4 py-2.5 text-sm outline-none transition-colors focus:border-accent"
+          />
+          <p className="mt-1 text-xs text-foreground/30">Prompt ที่ใช้ส่งให้ AI สร้างรูปการ์ตูน</p>
         </div>
 
         {/* Submit */}

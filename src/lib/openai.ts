@@ -8,10 +8,13 @@ function getOpenAI() {
   return _openai;
 }
 
+const DEFAULT_PROMPT = 'apply style and background of first image into second image';
+
 export async function generateCartoonImage(
   userImageBuffer: Buffer,
   templateImageUrl: string,
-  templateFilename: string
+  templateFilename: string,
+  prompt?: string
 ): Promise<string> {
   const res = await fetch(templateImageUrl);
   if (!res.ok) {
@@ -28,7 +31,7 @@ export async function generateCartoonImage(
       await toFile(templateBuffer, templateFilename, { type: templateMime }),
       await toFile(userImageBuffer, 'user.webp', { type: 'image/webp' }),
     ],
-    prompt: 'Use style of first image apply to second image. Change the background to pastel color from template image',
+    prompt: prompt || DEFAULT_PROMPT,
     size: '1024x1024',
     quality: 'medium',
   });

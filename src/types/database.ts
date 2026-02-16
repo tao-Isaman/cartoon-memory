@@ -200,6 +200,7 @@ export interface Database {
           filename: string;
           storage_path: string;
           image_url: string;
+          prompt: string;
           is_active: boolean;
           sort_order: number;
           created_at: string;
@@ -212,6 +213,7 @@ export interface Database {
           filename: string;
           storage_path: string;
           image_url: string;
+          prompt?: string;
           is_active?: boolean;
           sort_order?: number;
           created_at?: string;
@@ -224,6 +226,7 @@ export interface Database {
           filename?: string;
           storage_path?: string;
           image_url?: string;
+          prompt?: string;
           is_active?: boolean;
           sort_order?: number;
           created_at?: string;

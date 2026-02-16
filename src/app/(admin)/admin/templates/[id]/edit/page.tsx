@@ -13,6 +13,7 @@ interface AdminTemplate {
   filename: string;
   storage_path: string;
   image_url: string;
+  prompt: string;
   is_active: boolean;
   sort_order: number;
 }
@@ -26,6 +27,7 @@ export default function EditTemplatePage({ params }: { params: Promise<{ id: str
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
+  const [prompt, setPrompt] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -39,6 +41,7 @@ export default function EditTemplatePage({ params }: { params: Promise<{ id: str
           setTemplate(found);
           setName(found.name);
           setSlug(found.slug);
+          setPrompt(found.prompt ?? '');
           setPreview(found.image_url || `/template/${found.filename}`);
         }
       })
@@ -94,6 +97,7 @@ export default function EditTemplatePage({ params }: { params: Promise<{ id: str
         body: JSON.stringify({
           name,
           slug,
+          prompt,
           filename,
           storage_path: storagePath,
           image_url: imageUrl,
@@ -197,6 +201,19 @@ export default function EditTemplatePage({ params }: { params: Promise<{ id: str
             placeholder="เช่น pink_tone"
             className="w-full rounded-xl border border-card-border bg-white px-4 py-2.5 text-sm outline-none transition-colors focus:border-accent"
           />
+        </div>
+
+        {/* Prompt */}
+        <div>
+          <label className="mb-2 block text-sm font-medium text-foreground/60">Prompt (สำหรับ AI)</label>
+          <textarea
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            rows={3}
+            placeholder="apply style and background of first image into second image"
+            className="w-full rounded-xl border border-card-border bg-white px-4 py-2.5 text-sm outline-none transition-colors focus:border-accent"
+          />
+          <p className="mt-1 text-xs text-foreground/30">Prompt ที่ใช้ส่งให้ AI สร้างรูปการ์ตูน</p>
         </div>
 
         {/* Submit */}

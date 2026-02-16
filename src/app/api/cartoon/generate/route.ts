@@ -28,7 +28,7 @@ export async function POST(request: Request) {
   // Resolve template from DB
   let templateQuery = serviceClient
     .from('templates')
-    .select('id, slug, name, filename, image_url')
+    .select('id, slug, name, filename, image_url, prompt')
     .eq('is_active', true);
 
   if (templateId) {
@@ -70,7 +70,7 @@ export async function POST(request: Request) {
     const userImageBuffer = Buffer.from(arrayBuffer);
 
     // Generate cartoon
-    const b64Result = await generateCartoonImage(userImageBuffer, templateRow.image_url, templateRow.filename);
+    const b64Result = await generateCartoonImage(userImageBuffer, templateRow.image_url, templateRow.filename, templateRow.prompt);
 
     // Upload original
     const timestamp = Date.now();

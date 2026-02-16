@@ -12,6 +12,7 @@ interface AdminTemplate {
   filename: string;
   storage_path: string;
   image_url: string;
+  prompt: string;
   is_active: boolean;
   sort_order: number;
   created_at: string;
@@ -134,6 +135,9 @@ export default function AdminTemplatesPage() {
             <div className="min-w-0 flex-1">
               <p className="font-medium">{template.name}</p>
               <p className="truncate text-xs text-foreground/40">{template.slug}</p>
+              <p className="mt-0.5 truncate text-xs text-foreground/30" title={template.prompt}>
+                Prompt: {template.prompt}
+              </p>
             </div>
 
             {/* Actions */}
