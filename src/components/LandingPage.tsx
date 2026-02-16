@@ -213,8 +213,8 @@ export default function LandingPage() {
     ];
 
     const faqs = [
-        { question: 'Cartoon Gen คืออะไร?', answer: 'Cartoon Gen คือเว็บแอปสำหรับเปลี่ยนรูปถ่ายเป็นรูปการ์ตูนด้วยเทคโนโลยี AI จาก OpenAI คุณสามารถอัพโหลดรูปถ่ายใดก็ได้ แล้วระบบจะสร้างรูปการ์ตูนให้โดยอัตโนมัติ' },
-        { question: 'ใช้งานยากไหม?', answer: 'ไม่ยากเลย! แค่ 3 ขั้นตอนง่ายๆ คือ อัพโหลดรูป → เลือกสไตล์ → กดสร้าง ไม่ต้องติดตั้งแอปเพิ่มเติม ใช้งานผ่านเว็บบราวเซอร์ได้เลย' },
+        { question: 'Cartoon Gen สร้างรูปการ์ตูนได้อย่างไร?', answer: 'Cartoon Gen คือเว็บแอปสำหรับสร้างรูปการ์ตูนจากรูปถ่ายด้วยเทคโนโลยี AI คุณสามารถอัพโหลดรูปถ่ายใดก็ได้ แล้วระบบจะวาดรูปการ์ตูนให้โดยอัตโนมัติ เปลี่ยนรูปเป็นการ์ตูนได้ทันที' },
+        { question: 'วาดรูปการ์ตูนออนไลน์ยากไหม?', answer: 'ไม่ยากเลย! แค่ 3 ขั้นตอนง่ายๆ คือ อัพโหลดรูป → เลือกสไตล์ → กดสร้างรูปการ์ตูน ไม่ต้องติดตั้งแอปเพิ่มเติม วาดรูปการ์ตูนออนไลน์ผ่านเว็บบราวเซอร์ได้เลย' },
         { question: 'ต้องจ่ายเงินเท่าไหร่?', answer: 'สร้างรูปการ์ตูนใช้ 10 เครดิตต่อรูป โดยมีแพ็กเกจเริ่มต้นที่ 59 บาท (100 เครดิต = 10 รูป) และคุณจะได้รับ 10 เครดิตฟรีเมื่อกรอกข้อมูลโปรไฟล์ครบ!' },
         { question: 'รูปภาพของฉันปลอดภัยไหม?', answer: 'ปลอดภัย 100% ครับ! รูปภาพของคุณถูกเก็บรักษาอย่างปลอดภัยบนระบบ Supabase Storage และเฉพาะคุณเท่านั้นที่สามารถจัดการรูปของตัวเองได้' },
         { question: 'รองรับไฟล์ประเภทอะไรบ้าง?', answer: 'รองรับไฟล์รูปภาพ JPG, PNG และ WebP ขนาดไม่เกิน 10MB ต่อไฟล์ ระบบจะปรับขนาดและบีบอัดรูปให้อัตโนมัติก่อนส่งไปประมวลผล' },
@@ -226,8 +226,51 @@ export default function LandingPage() {
         { credits: 500, price: 199, discount: 33, popular: false },
     ];
 
+    const jsonLd = [
+        {
+            '@context': 'https://schema.org',
+            '@type': 'WebApplication',
+            name: 'Cartoon Gen',
+            url: typeof window !== 'undefined' ? window.location.origin : '',
+            description: 'สร้างรูปการ์ตูนจากรูปถ่ายด้วย AI วาดรูปการ์ตูนออนไลน์ เปลี่ยนรูปเป็นการ์ตูนสุดน่ารัก แปลงรูปเป็นการ์ตูน ไม่มีลายน้ำ',
+            applicationCategory: 'MultimediaApplication',
+            operatingSystem: 'Web',
+            offers: {
+                '@type': 'Offer',
+                price: '59',
+                priceCurrency: 'THB',
+                description: '100 เครดิต สร้างรูปการ์ตูนได้ 10 รูป',
+            },
+            featureList: [
+                'สร้างรูปการ์ตูนด้วย AI',
+                'วาดรูปการ์ตูนออนไลน์',
+                'เปลี่ยนรูปเป็นการ์ตูน',
+                'หลายสไตล์ให้เลือก',
+                'ดาวน์โหลดฟรีไม่มีลายน้ำ',
+            ],
+        },
+        {
+            '@context': 'https://schema.org',
+            '@type': 'FAQPage',
+            mainEntity: faqs.map((f) => ({
+                '@type': 'Question',
+                name: f.question,
+                acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: f.answer,
+                },
+            })),
+        },
+    ];
+
     return (
         <div className="relative min-h-screen overflow-hidden bg-background">
+            {/* JSON-LD Structured Data */}
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+            />
+
             {/* ════════════════ NAVBAR ════════════════ */}
             <nav className="sticky top-0 z-50 border-b border-white/40 bg-white/80 backdrop-blur-xl">
                 <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
@@ -281,16 +324,16 @@ export default function LandingPage() {
                     </div>
 
                     <h1 className="mb-6 text-4xl font-bold leading-tight text-foreground sm:text-5xl lg:text-6xl">
-                        เปลี่ยนรูปของคุณให้เป็น
+                        สร้างรูปการ์ตูน AI
                         <br />
                         <span className="bg-gradient-to-r from-primary via-rose-400 to-primary bg-clip-text text-transparent animate-gradient-text">
-                            การ์ตูนสุดน่ารัก
+                            วาดรูปการ์ตูนออนไลน์
                         </span>
                     </h1>
 
                     <p className="mx-auto mb-10 max-w-2xl text-base leading-relaxed text-foreground/55 sm:text-lg">
-                        อัพโหลดรูปถ่ายของคุณ แล้วให้ AI เปลี่ยนเป็นรูปการ์ตูนคุณภาพสูงได้ทันที
-                        เลือกสไตล์ที่ชอบ สร้างได้ไม่จำกัด ดาวน์โหลดฟรีไม่มีลายน้ำ
+                        สร้างรูปการ์ตูนจากรูปถ่ายด้วย AI เปลี่ยนรูปเป็นการ์ตูนสุดน่ารักได้ทันที
+                        วาดรูปการ์ตูนออนไลน์ เลือกสไตล์ที่ชอบ ดาวน์โหลดฟรีไม่มีลายน้ำ
                     </p>
 
                     <div className="mb-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
@@ -367,10 +410,10 @@ export default function LandingPage() {
                     <div className="mb-14 text-center sm:mb-20">
                         <span className="mb-4 inline-block rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary">ฟีเจอร์เด่น</span>
                         <h2 className="mb-4 text-3xl font-bold text-foreground sm:text-4xl">
-                            ทำไมต้องเลือก <span className="text-primary">Cartoon Gen</span>
+                            ทำไมต้องเลือก <span className="text-primary">Cartoon Gen</span> สร้างรูปการ์ตูน
                         </h2>
                         <p className="mx-auto max-w-lg text-foreground/55">
-                            เปลี่ยนรูปถ่ายธรรมดาให้กลายเป็นงานศิลป์การ์ตูนสุดน่ารัก ด้วยเทคโนโลยี AI ที่ทันสมัยที่สุด
+                            วาดรูปการ์ตูนจากรูปถ่ายด้วย AI แปลงรูปเป็นการ์ตูนสุดน่ารัก ด้วยเทคโนโลยีที่ทันสมัยที่สุด
                         </p>
                     </div>
 
@@ -389,10 +432,10 @@ export default function LandingPage() {
                     <div className="mb-14 text-center sm:mb-20">
                         <span className="mb-4 inline-block rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary">ง่ายมาก</span>
                         <h2 className="mb-4 text-3xl font-bold text-foreground sm:text-4xl">
-                            สร้างการ์ตูนใน <span className="text-primary">3 ขั้นตอน</span>
+                            วาดรูปการ์ตูนใน <span className="text-primary">3 ขั้นตอน</span>
                         </h2>
                         <p className="mx-auto max-w-lg text-foreground/55">
-                            ไม่ต้องมีทักษะการวาด ไม่ต้องติดตั้งโปรแกรม แค่อัพโหลดรูปแล้วรอ
+                            ไม่ต้องมีทักษะการวาด ไม่ต้องติดตั้งโปรแกรม แค่อัพโหลดรูปแล้วสร้างรูปการ์ตูนได้เลย
                         </p>
                     </div>
 
@@ -466,10 +509,10 @@ export default function LandingPage() {
                             <ImagePlus size={32} className="text-white animate-heartbeat" />
                         </div>
                         <h2 className="mb-4 text-3xl font-bold text-white sm:text-4xl">
-                            พร้อมเปลี่ยนรูปเป็นการ์ตูนหรือยัง?
+                            พร้อมสร้างรูปการ์ตูนหรือยัง?
                         </h2>
                         <p className="mx-auto mb-8 max-w-md text-white/80">
-                            เริ่มต้นฟรี! ได้รับ 10 เครดิตเมื่อกรอกข้อมูลโปรไฟล์ครบ สร้างรูปการ์ตูนรูปแรกได้เลย
+                            เริ่มวาดรูปการ์ตูนฟรี! ได้รับ 10 เครดิตเมื่อกรอกข้อมูลโปรไฟล์ครบ สร้างรูปการ์ตูนรูปแรกได้เลย
                         </p>
                         <Link
                             href="/login"
@@ -492,7 +535,7 @@ export default function LandingPage() {
                                 <Palette size={14} className="text-white" />
                             </div>
                             <span className="text-sm font-medium text-foreground/50">
-                                Cartoon Gen — เปลี่ยนรูปเป็นการ์ตูนด้วย AI
+                                Cartoon Gen — สร้างรูปการ์ตูน วาดรูปการ์ตูนด้วย AI
                             </span>
                         </div>
                         <div className="flex items-center gap-6 text-sm text-foreground/45">
@@ -503,7 +546,7 @@ export default function LandingPage() {
                         </div>
                     </div>
                     <div className="mt-8 text-center text-xs text-foreground/25">
-                        <p>Cartoon Gen — เปลี่ยนรูปเป็นการ์ตูน AI | สร้างรูปการ์ตูนออนไลน์ | แปลงรูปเป็นการ์ตูน</p>
+                        <p>Cartoon Gen — สร้างรูปการ์ตูน AI | วาดรูปการ์ตูนออนไลน์ | เปลี่ยนรูปเป็นการ์ตูน | แปลงรูปเป็นการ์ตูน | ทำรูปการ์ตูนจากรูปถ่าย</p>
                     </div>
                 </div>
             </footer>
