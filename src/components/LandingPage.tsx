@@ -335,13 +335,14 @@ export default function LandingPage() {
                             ตัวอย่างผลงานจาก AI
                         </span>
                     </div>
-                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 sm:gap-3">
+                    <div className="grid grid-cols-3 gap-2 sm:gap-3">
                         {[
                             '/example/cartoon-1771216401633.png',
                             '/example/cartoon-1771216409900.png',
                             '/example/cartoon-1771216414995.png',
                             '/example/cartoon-1771216420461.png',
                             '/example/cartoon-1771216425282.png',
+                            '/example/cool_paper_tone.jpg',
                         ].map((src, i) => (
                             <div
                                 key={src}
