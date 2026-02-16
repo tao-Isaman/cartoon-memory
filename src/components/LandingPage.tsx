@@ -327,33 +327,34 @@ export default function LandingPage() {
                     </div>
                 </div>
 
-                {/* Cartoon Before/After Preview */}
-                <div className="relative mx-auto mt-16 max-w-2xl">
-                    <div className="rounded-3xl border border-white/40 bg-white/60 p-4 shadow-2xl shadow-primary/10 backdrop-blur-sm sm:p-6">
-                        <div className="grid grid-cols-2 gap-3 sm:gap-6">
-                            <div className="text-center">
-                                <div className="mb-3 aspect-square overflow-hidden rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200">
-                                    <div className="flex h-full items-center justify-center text-foreground/20">
-                                        <div className="text-center">
-                                            <Camera size={48} className="mx-auto mb-2" />
-                                            <p className="text-xs font-medium">รูปต้นฉบับ</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <span className="text-xs font-medium text-foreground/40">ก่อน</span>
+                {/* Example Results Showcase */}
+                <div className="relative mx-auto mt-16 max-w-3xl">
+                    <div className="mb-4 text-center">
+                        <span className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground/45">
+                            <Sparkles size={14} className="text-primary" />
+                            ตัวอย่างผลงานจาก AI
+                        </span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 sm:gap-3">
+                        {[
+                            '/example/cartoon-1771216401633.png',
+                            '/example/cartoon-1771216409900.png',
+                            '/example/cartoon-1771216414995.png',
+                            '/example/cartoon-1771216420461.png',
+                            '/example/cartoon-1771216425282.png',
+                        ].map((src, i) => (
+                            <div
+                                key={src}
+                                className="group aspect-square overflow-hidden rounded-2xl border border-white/40 bg-white/60 shadow-lg shadow-primary/10 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/20"
+                                style={{ animationDelay: `${i * 100}ms` }}
+                            >
+                                <img
+                                    src={src}
+                                    alt={`ตัวอย่างการ์ตูน ${i + 1}`}
+                                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                />
                             </div>
-                            <div className="text-center">
-                                <div className="mb-3 aspect-square overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 to-rose-300/10">
-                                    <div className="flex h-full items-center justify-center text-primary/30">
-                                        <div className="text-center">
-                                            <Sparkles size={48} className="mx-auto mb-2" />
-                                            <p className="text-xs font-medium">รูปการ์ตูน AI</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <span className="text-xs font-medium text-primary">หลัง ✨</span>
-                            </div>
-                        </div>
+                        ))}
                     </div>
                 </div>
             </section>
