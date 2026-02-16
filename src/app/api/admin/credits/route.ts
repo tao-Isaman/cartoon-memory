@@ -23,20 +23,29 @@ export async function POST(request: Request) {
   const supabase = getSupabaseServiceClient();
 
   // Find user by email
-  const { data: userData, error: userError } = await supabase.auth.admin.listUsers();
-  if (userError) {
-    return NextResponse.json({ error: 'Failed to search users' }, { status: 500 });
+  let userId: string | null = null;
+  let page = 1;
+  while (!userId) {
+    const { data: listData, error: listError } = await supabase.auth.admin.listUsers({
+      page,
+      perPage: 100,
+    });
+    if (listError || !listData?.users?.length) break;
+
+    const found = listData.users.find(
+      (u) => u.email?.toLowerCase() === email.toLowerCase()
+    );
+    if (found) {
+      userId = found.id;
+      break;
+    }
+    if (listData.users.length < 100) break;
+    page++;
   }
 
-  const targetUser = userData.users.find(
-    (u) => u.email?.toLowerCase() === email.toLowerCase()
-  );
-
-  if (!targetUser) {
+  if (!userId) {
     return NextResponse.json({ error: 'ไม่พบผู้ใช้ที่มีอีเมลนี้' }, { status: 404 });
   }
-
-  const userId = targetUser.id;
 
   await ensureUserCreditsRow(supabase, userId);
 
@@ -59,7 +68,7 @@ export async function POST(request: Request) {
   return NextResponse.json({
     success: true,
     userId,
-    email: targetUser.email,
+    email,
     previousBalance: currentBalance,
     newBalance,
   });
