@@ -4,11 +4,12 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { LayoutDashboard, Palette, ArrowLeft, LogOut, Menu, X, Shield } from 'lucide-react';
+import { LayoutDashboard, Palette, Coins, ArrowLeft, LogOut, Menu, X, Shield } from 'lucide-react';
 
 const navItems = [
   { href: '/admin', label: 'แดชบอร์ด', icon: LayoutDashboard },
   { href: '/admin/templates', label: 'เทมเพลต', icon: Palette },
+  { href: '/admin/credits', label: 'เพิ่มเครดิต', icon: Coins },
 ];
 
 export default function AdminAppBar() {
