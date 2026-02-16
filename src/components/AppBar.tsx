@@ -25,7 +25,7 @@ export default function AppBar() {
     <header className="sticky top-0 z-40 border-b border-card-border bg-white/80 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4">
         {/* Logo */}
-        <Link href="/dashboard" className="font-[family-name:var(--font-display)] text-2xl text-primary">
+        <Link href="/" className="font-[family-name:var(--font-display)] text-2xl text-primary">
           Cartoon Gen
         </Link>
 
