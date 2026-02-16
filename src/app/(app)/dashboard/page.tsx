@@ -1,13 +1,22 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import dynamic from 'next/dynamic';
+import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
-import CartoonCreator from '@/components/CartoonCreator';
 import ImageWithLoader from '@/components/ImageWithLoader';
 import { CartoonGeneration } from '@/types/cartoon';
 import { Image as ImageIcon, Trash2, Loader2, Sparkles, X, Download } from 'lucide-react';
 import { Template } from '@/lib/templates';
+
+const CartoonCreator = dynamic(() => import('@/components/CartoonCreator'), {
+  loading: () => (
+    <div className="flex justify-center py-12">
+      <Loader2 className="animate-spin text-primary" size={32} />
+    </div>
+  ),
+});
 
 type Tab = 'create' | 'gallery';
 
@@ -22,16 +31,21 @@ export default function DashboardPage() {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [viewingImage, setViewingImage] = useState<CartoonGeneration | null>(null);
   const [templateMap, setTemplateMap] = useState<Record<string, string>>({});
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [templatesLoading, setTemplatesLoading] = useState(true);
 
   useEffect(() => {
     fetch('/api/templates')
       .then(res => res.json())
       .then(data => {
+        const list: Template[] = data.templates ?? [];
+        setTemplates(list);
         const map: Record<string, string> = {};
-        (data.templates ?? []).forEach((t: Template) => { map[t.slug] = t.name; });
+        list.forEach((t) => { map[t.slug] = t.name; });
         setTemplateMap(map);
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setTemplatesLoading(false));
   }, []);
 
   const loadGenerations = useCallback(
@@ -142,15 +156,17 @@ export default function DashboardPage() {
 
       {/* Create Tab */}
       {activeTab === 'create' && (
-        <CartoonCreator onGenerated={handleGenerated} />
+        <CartoonCreator templates={templates} templatesLoading={templatesLoading} onGenerated={handleGenerated} />
       )}
 
       {/* Gallery Tab — Instagram profile grid */}
       {activeTab === 'gallery' && (
         <section>
           {loading && generations.length === 0 ? (
-            <div className="flex justify-center py-12">
-              <Loader2 className="animate-spin text-primary" size={32} />
+            <div className="grid grid-cols-3 gap-0.5 overflow-hidden rounded-xl">
+              {Array.from({ length: 9 }).map((_, i) => (
+                <div key={i} className="aspect-square animate-shimmer" />
+              ))}
             </div>
           ) : generations.length === 0 ? (
             <div className="rounded-2xl border border-card-border bg-card p-12 text-center">
@@ -225,11 +241,15 @@ export default function DashboardPage() {
             </button>
 
             {/* Image */}
-            <img
-              src={viewingImage.cartoonImageUrl}
-              alt="Cartoon"
-              className="w-full rounded-xl"
-            />
+            <div className="relative aspect-square w-full">
+              <Image
+                src={viewingImage.cartoonImageUrl}
+                alt="Cartoon"
+                fill
+                sizes="(max-width: 640px) 100vw, 512px"
+                className="rounded-xl object-contain"
+              />
+            </div>
 
             {/* Info bar */}
             <div className="mt-3 flex items-center justify-between">

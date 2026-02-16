@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 
 interface ImageWithLoaderProps {
   src: string;
@@ -25,10 +26,12 @@ export default function ImageWithLoader({ src, alt, className = '' }: ImageWithL
       {!loaded && (
         <div className="absolute inset-0 animate-shimmer rounded-xl" />
       )}
-      <img
+      <Image
         src={src}
         alt={alt}
-        className={`h-full w-full object-cover transition-opacity duration-300 ${
+        fill
+        sizes="(max-width: 640px) 33vw, 200px"
+        className={`object-cover transition-opacity duration-300 ${
           loaded ? 'opacity-100' : 'opacity-0'
         }`}
         onLoad={() => setLoaded(true)}

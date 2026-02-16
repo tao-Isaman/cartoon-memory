@@ -4,6 +4,7 @@ export async function processImage(file: File): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
+      URL.revokeObjectURL(img.src);
       const canvas = document.createElement('canvas');
       let { width, height } = img;
 

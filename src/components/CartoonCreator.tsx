@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
+import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCreditBalance } from '@/contexts/CreditBalanceContext';
 import { useToast } from '@/contexts/ToastContext';
@@ -14,10 +15,12 @@ import { CartoonGeneration } from '@/types/cartoon';
 type CreatorState = 'select' | 'upload' | 'preview' | 'generating' | 'result';
 
 interface CartoonCreatorProps {
+  templates: Template[];
+  templatesLoading: boolean;
   onGenerated?: () => void;
 }
 
-export default function CartoonCreator({ onGenerated }: CartoonCreatorProps) {
+export default function CartoonCreator({ templates, templatesLoading, onGenerated }: CartoonCreatorProps) {
   const { user } = useAuth();
   const { balance, refresh } = useCreditBalance();
   const { showToast } = useToast();
@@ -27,17 +30,13 @@ export default function CartoonCreator({ onGenerated }: CartoonCreatorProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [result, setResult] = useState<CartoonGeneration | null>(null);
-  const [templates, setTemplates] = useState<Template[]>([]);
-  const [templatesLoading, setTemplatesLoading] = useState(true);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
 
   useEffect(() => {
-    fetch('/api/templates')
-      .then(res => res.json())
-      .then(data => setTemplates(data.templates ?? []))
-      .catch(() => {})
-      .finally(() => setTemplatesLoading(false));
-  }, []);
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
 
   const handleTemplateSelect = (t: Template) => {
     setSelectedTemplate(t);
@@ -117,6 +116,7 @@ export default function CartoonCreator({ onGenerated }: CartoonCreatorProps) {
   };
 
   const handleReset = () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
     setState('select');
     setSelectedFile(null);
     setPreviewUrl(null);
@@ -153,8 +153,19 @@ export default function CartoonCreator({ onGenerated }: CartoonCreatorProps) {
             </span>
           </p>
           {templatesLoading ? (
-            <div className="flex justify-center py-12">
-              <Loader2 className="animate-spin text-primary" size={32} />
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="overflow-hidden rounded-xl border border-card-border bg-card">
+                  <div className="flex items-center gap-3 px-4 py-3">
+                    <div className="h-8 w-8 animate-shimmer rounded-full" />
+                    <div className="h-4 w-24 animate-shimmer rounded" />
+                  </div>
+                  <div className="aspect-square w-full animate-shimmer" />
+                  <div className="px-4 py-3">
+                    <div className="h-10 w-full animate-shimmer rounded-lg" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : templates.length === 0 ? (
             <div className="rounded-xl border border-card-border bg-card p-8 text-center text-sm text-foreground/40">
@@ -168,17 +179,21 @@ export default function CartoonCreator({ onGenerated }: CartoonCreatorProps) {
               >
                 {/* Post header */}
                 <div className="flex items-center gap-3 px-4 py-3">
-                  <img
+                  <Image
                     src={t.imageUrl}
                     alt={t.name}
+                    width={32}
+                    height={32}
                     className="h-8 w-8 rounded-full object-cover ring-2 ring-primary/20"
                   />
                   <span className="text-sm font-semibold">{t.name}</span>
                 </div>
                 {/* Post image */}
-                <img
+                <Image
                   src={t.imageUrl}
                   alt={t.name}
+                  width={600}
+                  height={600}
                   className="aspect-square w-full object-cover"
                 />
                 {/* Post action */}
@@ -202,9 +217,11 @@ export default function CartoonCreator({ onGenerated }: CartoonCreatorProps) {
         <div className="space-y-4">
           {/* Selected template bar */}
           <div className="flex items-center gap-3 rounded-xl border border-card-border bg-card p-3">
-            <img
+            <Image
               src={selectedTemplate.imageUrl}
               alt={selectedTemplate.name}
+              width={48}
+              height={48}
               className="h-12 w-12 rounded-lg object-cover"
             />
             <div className="flex-1">
@@ -253,9 +270,11 @@ export default function CartoonCreator({ onGenerated }: CartoonCreatorProps) {
         <div className="space-y-4">
           {/* Selected template bar */}
           <div className="flex items-center gap-3 rounded-xl border border-card-border bg-card p-3">
-            <img
+            <Image
               src={selectedTemplate.imageUrl}
               alt={selectedTemplate.name}
+              width={48}
+              height={48}
               className="h-12 w-12 rounded-lg object-cover"
             />
             <div className="flex-1">
@@ -317,9 +336,11 @@ export default function CartoonCreator({ onGenerated }: CartoonCreatorProps) {
             {result.cartoonImageUrl && (
               <div>
                 <p className="mb-1 text-center text-xs text-foreground/40">การ์ตูน</p>
-                <img
+                <Image
                   src={result.cartoonImageUrl}
                   alt="Cartoon"
+                  width={600}
+                  height={600}
                   className="w-full rounded-xl"
                 />
               </div>

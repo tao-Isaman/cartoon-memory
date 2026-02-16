@@ -117,6 +117,7 @@ body {
 
 .animate-float-up {
   animation: floatUp 8s ease-in-out infinite;
+  will-change: transform;
 }
 
 .animate-gradient-text {

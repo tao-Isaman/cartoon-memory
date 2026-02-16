@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
     Sparkles,
     Palette,
@@ -21,6 +22,29 @@ import {
 } from 'lucide-react';
 
 // ─── Intersection Observer Hook ───────────────────────────────────────────────
+const observerCallbacks = new Map<Element, (visible: boolean) => void>();
+let sharedObserver: IntersectionObserver | null = null;
+
+function getSharedObserver() {
+    if (typeof window === 'undefined') return null;
+    if (!sharedObserver) {
+        sharedObserver = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        const cb = observerCallbacks.get(entry.target);
+                        cb?.(true);
+                        sharedObserver!.unobserve(entry.target);
+                        observerCallbacks.delete(entry.target);
+                    }
+                });
+            },
+            { threshold: 0.15 }
+        );
+    }
+    return sharedObserver;
+}
+
 function useReveal() {
     const ref = useRef<HTMLDivElement>(null);
     const [visible, setVisible] = useState(false);
@@ -28,17 +52,14 @@ function useReveal() {
     useEffect(() => {
         const el = ref.current;
         if (!el) return;
-        const observer = new IntersectionObserver(
-            ([entry]) => {
-                if (entry.isIntersecting) {
-                    setVisible(true);
-                    observer.unobserve(el);
-                }
-            },
-            { threshold: 0.15 }
-        );
+        const observer = getSharedObserver();
+        if (!observer) return;
+        observerCallbacks.set(el, setVisible);
         observer.observe(el);
-        return () => observer.disconnect();
+        return () => {
+            observer.unobserve(el);
+            observerCallbacks.delete(el);
+        };
     }, []);
 
     return { ref, visible };
@@ -195,82 +216,41 @@ function PricingCard({ credits, price, discount, popular, delay }: {
     );
 }
 
+// ─── Static Data Arrays ───────────────────────────────────────────────────────
+const features = [
+    { icon: Wand2, title: 'AI สร้างการ์ตูนอัตโนมัติ', description: 'เปลี่ยนรูปถ่ายของคุณเป็นการ์ตูนสุดน่ารักด้วยเทคโนโลยี AI ชั้นนำจาก OpenAI', gradient: 'bg-gradient-to-br from-pink-500 to-rose-600' },
+    { icon: Camera, title: 'รองรับทุกรูปถ่าย', description: 'อัพโหลดรูป JPG, PNG หรือ WebP ขนาดไม่เกิน 10MB ได้เลย', gradient: 'bg-gradient-to-br from-pink-500 to-rose-500' },
+    { icon: Zap, title: 'รวดเร็วทันใจ', description: 'สร้างรูปการ์ตูนเสร็จภายในไม่กี่วินาที ไม่ต้องรอนาน', gradient: 'bg-gradient-to-br from-amber-500 to-orange-500' },
+    { icon: Palette, title: 'หลายสไตล์ให้เลือก', description: 'เลือกสไตล์การ์ตูนที่คุณชอบ ไม่ว่าจะเป็นแนวน่ารัก หรือแนวเท่', gradient: 'bg-gradient-to-br from-emerald-500 to-teal-500' },
+    { icon: Download, title: 'ดาวน์โหลดฟรี', description: 'ดาวน์โหลดรูปการ์ตูนคุณภาพสูงได้ทันที ไม่มีลายน้ำ', gradient: 'bg-gradient-to-br from-sky-500 to-cyan-500' },
+    { icon: Shield, title: 'ปลอดภัย 100%', description: 'รูปภาพของคุณถูกเก็บรักษาอย่างปลอดภัย และเป็นส่วนตัว', gradient: 'bg-gradient-to-br from-rose-500 to-pink-600' },
+];
+
+const steps = [
+    { icon: Upload, title: 'อัพโหลดรูปภาพ', description: 'เลือกรูปถ่ายที่คุณอยากเปลี่ยนเป็นการ์ตูน รองรับ JPG, PNG, WebP' },
+    { icon: Wand2, title: 'AI สร้างการ์ตูน', description: 'ระบบ AI จะเปลี่ยนรูปของคุณเป็นการ์ตูนสุดน่ารักภายในไม่กี่วินาที' },
+    { icon: Download, title: 'ดาวน์โหลดผลลัพธ์', description: 'ดาวน์โหลดรูปการ์ตูนคุณภาพสูงไปใช้งานได้เลย' },
+];
+
+const faqs = [
+    { question: 'Cartoon Gen สร้างรูปการ์ตูนได้อย่างไร?', answer: 'Cartoon Gen คือเว็บแอปสำหรับสร้างรูปการ์ตูนจากรูปถ่ายด้วยเทคโนโลยี AI คุณสามารถอัพโหลดรูปถ่ายใดก็ได้ แล้วระบบจะวาดรูปการ์ตูนให้โดยอัตโนมัติ เปลี่ยนรูปเป็นการ์ตูนได้ทันที' },
+    { question: 'วาดรูปการ์ตูนออนไลน์ยากไหม?', answer: 'ไม่ยากเลย! แค่ 3 ขั้นตอนง่ายๆ คือ อัพโหลดรูป → เลือกสไตล์ → กดสร้างรูปการ์ตูน ไม่ต้องติดตั้งแอปเพิ่มเติม วาดรูปการ์ตูนออนไลน์ผ่านเว็บบราวเซอร์ได้เลย' },
+    { question: 'ต้องจ่ายเงินเท่าไหร่?', answer: 'สร้างรูปการ์ตูนใช้ 10 เครดิตต่อรูป โดยมีแพ็กเกจเริ่มต้นที่ 59 บาท (100 เครดิต = 10 รูป) และคุณจะได้รับ 10 เครดิตฟรีเมื่อกรอกข้อมูลโปรไฟล์ครบ!' },
+    { question: 'รูปภาพของฉันปลอดภัยไหม?', answer: 'ปลอดภัย 100% ครับ! รูปภาพของคุณถูกเก็บรักษาอย่างปลอดภัยบนระบบ Supabase Storage และเฉพาะคุณเท่านั้นที่สามารถจัดการรูปของตัวเองได้' },
+    { question: 'รองรับไฟล์ประเภทอะไรบ้าง?', answer: 'รองรับไฟล์รูปภาพ JPG, PNG และ WebP ขนาดไม่เกิน 10MB ต่อไฟล์ ระบบจะปรับขนาดและบีบอัดรูปให้อัตโนมัติก่อนส่งไปประมวลผล' },
+];
+
+const packages = [
+    { credits: 100, price: 59, discount: 0, popular: false },
+    { credits: 300, price: 129, discount: 27, popular: true },
+    { credits: 500, price: 199, discount: 33, popular: false },
+];
+
 // ─── Main Landing Page ───────────────────────────────────────────────────────
 export default function LandingPage() {
-    const features = [
-        { icon: Wand2, title: 'AI สร้างการ์ตูนอัตโนมัติ', description: 'เปลี่ยนรูปถ่ายของคุณเป็นการ์ตูนสุดน่ารักด้วยเทคโนโลยี AI ชั้นนำจาก OpenAI', gradient: 'bg-gradient-to-br from-pink-500 to-rose-600' },
-        { icon: Camera, title: 'รองรับทุกรูปถ่าย', description: 'อัพโหลดรูป JPG, PNG หรือ WebP ขนาดไม่เกิน 10MB ได้เลย', gradient: 'bg-gradient-to-br from-pink-500 to-rose-500' },
-        { icon: Zap, title: 'รวดเร็วทันใจ', description: 'สร้างรูปการ์ตูนเสร็จภายในไม่กี่วินาที ไม่ต้องรอนาน', gradient: 'bg-gradient-to-br from-amber-500 to-orange-500' },
-        { icon: Palette, title: 'หลายสไตล์ให้เลือก', description: 'เลือกสไตล์การ์ตูนที่คุณชอบ ไม่ว่าจะเป็นแนวน่ารัก หรือแนวเท่', gradient: 'bg-gradient-to-br from-emerald-500 to-teal-500' },
-        { icon: Download, title: 'ดาวน์โหลดฟรี', description: 'ดาวน์โหลดรูปการ์ตูนคุณภาพสูงได้ทันที ไม่มีลายน้ำ', gradient: 'bg-gradient-to-br from-sky-500 to-cyan-500' },
-        { icon: Shield, title: 'ปลอดภัย 100%', description: 'รูปภาพของคุณถูกเก็บรักษาอย่างปลอดภัย และเป็นส่วนตัว', gradient: 'bg-gradient-to-br from-rose-500 to-pink-600' },
-    ];
-
-    const steps = [
-        { icon: Upload, title: 'อัพโหลดรูปภาพ', description: 'เลือกรูปถ่ายที่คุณอยากเปลี่ยนเป็นการ์ตูน รองรับ JPG, PNG, WebP' },
-        { icon: Wand2, title: 'AI สร้างการ์ตูน', description: 'ระบบ AI จะเปลี่ยนรูปของคุณเป็นการ์ตูนสุดน่ารักภายในไม่กี่วินาที' },
-        { icon: Download, title: 'ดาวน์โหลดผลลัพธ์', description: 'ดาวน์โหลดรูปการ์ตูนคุณภาพสูงไปใช้งานได้เลย' },
-    ];
-
-    const faqs = [
-        { question: 'Cartoon Gen สร้างรูปการ์ตูนได้อย่างไร?', answer: 'Cartoon Gen คือเว็บแอปสำหรับสร้างรูปการ์ตูนจากรูปถ่ายด้วยเทคโนโลยี AI คุณสามารถอัพโหลดรูปถ่ายใดก็ได้ แล้วระบบจะวาดรูปการ์ตูนให้โดยอัตโนมัติ เปลี่ยนรูปเป็นการ์ตูนได้ทันที' },
-        { question: 'วาดรูปการ์ตูนออนไลน์ยากไหม?', answer: 'ไม่ยากเลย! แค่ 3 ขั้นตอนง่ายๆ คือ อัพโหลดรูป → เลือกสไตล์ → กดสร้างรูปการ์ตูน ไม่ต้องติดตั้งแอปเพิ่มเติม วาดรูปการ์ตูนออนไลน์ผ่านเว็บบราวเซอร์ได้เลย' },
-        { question: 'ต้องจ่ายเงินเท่าไหร่?', answer: 'สร้างรูปการ์ตูนใช้ 10 เครดิตต่อรูป โดยมีแพ็กเกจเริ่มต้นที่ 59 บาท (100 เครดิต = 10 รูป) และคุณจะได้รับ 10 เครดิตฟรีเมื่อกรอกข้อมูลโปรไฟล์ครบ!' },
-        { question: 'รูปภาพของฉันปลอดภัยไหม?', answer: 'ปลอดภัย 100% ครับ! รูปภาพของคุณถูกเก็บรักษาอย่างปลอดภัยบนระบบ Supabase Storage และเฉพาะคุณเท่านั้นที่สามารถจัดการรูปของตัวเองได้' },
-        { question: 'รองรับไฟล์ประเภทอะไรบ้าง?', answer: 'รองรับไฟล์รูปภาพ JPG, PNG และ WebP ขนาดไม่เกิน 10MB ต่อไฟล์ ระบบจะปรับขนาดและบีบอัดรูปให้อัตโนมัติก่อนส่งไปประมวลผล' },
-    ];
-
-    const packages = [
-        { credits: 100, price: 59, discount: 0, popular: false },
-        { credits: 300, price: 129, discount: 27, popular: true },
-        { credits: 500, price: 199, discount: 33, popular: false },
-    ];
-
-    const jsonLd = [
-        {
-            '@context': 'https://schema.org',
-            '@type': 'WebApplication',
-            name: 'Cartoon Gen',
-            url: typeof window !== 'undefined' ? window.location.origin : '',
-            description: 'สร้างรูปการ์ตูนจากรูปถ่ายด้วย AI วาดรูปการ์ตูนออนไลน์ เปลี่ยนรูปเป็นการ์ตูนสุดน่ารัก แปลงรูปเป็นการ์ตูน ไม่มีลายน้ำ',
-            applicationCategory: 'MultimediaApplication',
-            operatingSystem: 'Web',
-            offers: {
-                '@type': 'Offer',
-                price: '59',
-                priceCurrency: 'THB',
-                description: '100 เครดิต สร้างรูปการ์ตูนได้ 10 รูป',
-            },
-            featureList: [
-                'สร้างรูปการ์ตูนด้วย AI',
-                'วาดรูปการ์ตูนออนไลน์',
-                'เปลี่ยนรูปเป็นการ์ตูน',
-                'หลายสไตล์ให้เลือก',
-                'ดาวน์โหลดฟรีไม่มีลายน้ำ',
-            ],
-        },
-        {
-            '@context': 'https://schema.org',
-            '@type': 'FAQPage',
-            mainEntity: faqs.map((f) => ({
-                '@type': 'Question',
-                name: f.question,
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    text: f.answer,
-                },
-            })),
-        },
-    ];
 
     return (
         <div className="relative min-h-screen overflow-hidden bg-background">
-            {/* JSON-LD Structured Data */}
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-            />
-
             {/* ════════════════ NAVBAR ════════════════ */}
             <nav className="sticky top-0 z-50 border-b border-white/40 bg-white/80 backdrop-blur-xl">
                 <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
@@ -309,11 +289,9 @@ export default function LandingPage() {
                 {/* Floating Particles */}
                 <div className="absolute inset-0 overflow-hidden pointer-events-none">
                     <FloatingParticle delay={0} left="8%" size={14} />
-                    <FloatingParticle delay={2.5} left="22%" size={10} />
                     <FloatingParticle delay={4.5} left="42%" size={16} />
                     <FloatingParticle delay={1.5} left="62%" size={12} />
                     <FloatingParticle delay={3.5} left="78%" size={14} />
-                    <FloatingParticle delay={5.5} left="92%" size={10} />
                 </div>
 
                 <div className="relative mx-auto max-w-4xl text-center">
@@ -380,21 +358,23 @@ export default function LandingPage() {
                     </div>
                     <div className="grid grid-cols-3 gap-2 sm:gap-3">
                         {[
-                            '/example/cartoon-1771216401633.png',
-                            '/example/cartoon-1771216409900.png',
-                            '/example/cartoon-1771216414995.png',
-                            '/example/cartoon-1771216420461.png',
-                            '/example/cartoon-1771216425282.png',
-                            '/example/cool_paper_tone.jpg',
+                            '/example/cartoon-1771216401633.webp',
+                            '/example/cartoon-1771216409900.webp',
+                            '/example/cartoon-1771216414995.webp',
+                            '/example/cartoon-1771216420461.webp',
+                            '/example/cartoon-1771216425282.webp',
+                            '/example/cool_paper_tone.webp',
                         ].map((src, i) => (
                             <div
                                 key={src}
                                 className="group aspect-square overflow-hidden rounded-2xl border border-white/40 bg-white/60 shadow-lg shadow-primary/10 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/20"
                                 style={{ animationDelay: `${i * 100}ms` }}
                             >
-                                <img
+                                <Image
                                     src={src}
                                     alt={`ตัวอย่างการ์ตูน ${i + 1}`}
+                                    width={600}
+                                    height={600}
                                     className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                                 />
                             </div>

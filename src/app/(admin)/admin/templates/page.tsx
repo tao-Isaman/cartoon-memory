@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useToast } from '@/contexts/ToastContext';
 import { Plus, ChevronUp, ChevronDown, Trash2, Loader2, Palette, Eye, EyeOff, Pencil } from 'lucide-react';
 
@@ -125,9 +126,11 @@ export default function AdminTemplatesPage() {
             }`}
           >
             {/* Preview */}
-            <img
+            <Image
               src={template.image_url || `/template/${template.filename}`}
               alt={template.name}
+              width={64}
+              height={64}
               className="h-16 w-16 shrink-0 rounded-lg object-cover"
             />
 

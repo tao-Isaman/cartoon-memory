@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
@@ -64,9 +65,11 @@ export default function AppBar() {
 
           {/* User Avatar */}
           {avatarUrl ? (
-            <img
+            <Image
               src={avatarUrl}
               alt="Avatar"
+              width={32}
+              height={32}
               className="h-8 w-8 rounded-full border-2 border-card-border"
             />
           ) : (
