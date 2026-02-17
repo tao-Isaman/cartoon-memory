@@ -156,15 +156,16 @@ export default function EditTemplatePage({ params }: { params: Promise<{ id: str
           {preview ? (
             <div className="relative">
               <img src={preview} alt="Preview" className="aspect-square w-full rounded-xl object-cover" />
-              <button
-                type="button"
-                onClick={() => { setFile(null); setPreview(template.image_url || `/template/${template.filename}`); }}
-                className="absolute right-2 top-2 rounded-lg bg-black/50 px-2 py-1 text-xs text-white hover:bg-black/70"
-              >
-                {file ? 'ยกเลิก' : 'เปลี่ยน'}
-              </button>
-              {!file && (
-                <label className="absolute bottom-2 right-2 cursor-pointer rounded-lg bg-black/50 px-2 py-1 text-xs text-white hover:bg-black/70">
+              {file ? (
+                <button
+                  type="button"
+                  onClick={() => { setFile(null); setPreview(template.image_url || `/template/${template.filename}`); }}
+                  className="absolute right-2 top-2 rounded-lg bg-black/50 px-2 py-1 text-xs text-white hover:bg-black/70"
+                >
+                  ยกเลิก
+                </button>
+              ) : (
+                <label className="absolute right-2 top-2 cursor-pointer rounded-lg bg-black/50 px-2 py-1 text-xs text-white hover:bg-black/70">
                   เปลี่ยนรูป
                   <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
                 </label>
